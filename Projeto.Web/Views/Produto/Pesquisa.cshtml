@@ -1,0 +1,284 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Pesquisa</title>
+
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap-theme.css" rel="stylesheet" />
+
+    <script src="~/Scripts/jquery-1.9.1.js"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+
+    <script>
+        $(document).ready(
+            function () {
+
+
+                $("#btnedicao").click(
+                      function () {
+                          
+                          var model = {
+                              
+                              Codigo: $("#codigoproduto").val(),
+                              Nome: $("#nomeproduto").val(),
+                              Preco: $("#precoproduto").val(),
+                              Quantidade: $("#quantidadeproduto").val()
+                          };
+
+                          $.ajax(
+                                    {
+                                        type: "POST",
+                                        url: "/Produto/AtualizarProduto",
+                                        data: model,
+                                            success: function(msg){
+                                                $("#mensagemedicao").html(msg);
+                                            },
+                                            error: function (ex) {
+                                                $("#mensagemedicao").html("Erro: " + ex.status);
+                                            },
+                                    }
+                              );
+                      }
+                    );
+
+
+
+
+                excluir = function (id) {
+
+                    if (confirm('Deseja excluir este produto?')) {
+                        $.ajax(
+                       {
+                           type: "POST",
+                           url: "/Produto/ExcluirProduto",
+                           data: "Codigo=" + id,
+                           success: function (msg) {
+                               $("#resultado").html(msg);
+                               $("#tabela tbody").empty();
+                               $("#quantidadepesquisa").html("0");
+                           },
+                           error: function (ex) {
+                               $("#resultado").html("Erro: " + ex.status);
+                           }
+
+                       });
+                    }
+
+                    
+                };
+
+                atualizar = function (id) {
+                  
+                    $.ajax(
+                        {
+                            type: "POST",
+                            url: "/Produto/ObterProduto",
+                            data: "Codigo=" + id,
+                            success: function (model) {
+
+                                $("#codigoproduto").val(model.Codigo);
+                                $("#nomeproduto").val(model.Nome);
+                                $("#precoproduto").val(model.Preco);
+                                $("#quantidadeproduto").val(model.Quantidade);
+
+                            },
+                            error: function (ex) {
+
+                                $("#mensagemedicao").html("Erro: " + ex.status);
+                            }
+                        }
+                    );
+                };
+
+                $("#btncadastro").click(
+                     function () {
+
+
+
+                         var objetojson = {
+                             Nome: $("#nome").val(),
+                             Preco: $("#preco").val(),
+                             Quantidade: $("#quantidade").val()
+                         };
+
+                         $("#mensagem").html("Enviando requisição...");
+                         $.ajax(
+                             {
+                                 type: "POST",
+                                 url: "/Produto/CadastrarProduto",
+                                 data: objetojson,
+                                 success: function (msg) {
+                                     $("#mensagem").html(msg);
+
+                                     $("#nome").val("");
+                                     $("#preco").val("");
+                                     $("#quantidade").val("");
+                                 },
+
+                                 error: function (erro) {
+                                     $("#mensagem").html("Erro: " + erro.status);
+                                 }
+                             }
+                         )
+                     }
+                );
+
+                $("#nomepesquisa").keyup(
+                        function () {
+
+                            $("#resultado").html("Realizando pesquisa...");
+
+                            $.ajax(
+                                {
+                                    type: "POST",
+                                    url: "/Produto/ConsultarProduto",
+                                    data: "Nome=" + $("#nomepesquisa").val(),
+                                    success: function (dados) {
+
+                                        $("#resultado").html("");
+
+                                        var conteudo = "";
+
+
+                                        for (var i = 0; i < dados.length; i++) {
+                                            conteudo += "<tr>";
+                                                 conteudo += "<td>" + dados[i].Codigo + "</td>"
+                                                 conteudo += "<td>" + dados[i].Nome + "</td>"
+                                                 conteudo += "<td>" + dados[i].Preco + "</td>"
+                                                 conteudo += "<td>" + dados[i].Quantidade + "</td>"
+                                                 conteudo += "<td>" + dados[i].Total + "</td>"
+                                                 conteudo += "<td>" + dados[i].DataCadastro + "</td>"
+                                                 conteudo += "<td> <a href='#' onclick='excluir(" + dados[i].Codigo +")'>Excluir</a></td>"
+                                                 conteudo += "<td> <a href='#' onclick='atualizar("+ dados[i].Codigo +")' data-target='#janelaedicao' data-toggle='modal'>Atualizar</a></td>"
+                                            conteudo += "</tr>"
+                                        }
+
+                                        $("#tabela tbody").empty();
+                                        $("#tabela tbody").append(conteudo);
+                                        $("#quantidadepesquisa").html(dados.length);
+                                    },
+
+                                    error: function (erro) {
+                                       alert("Erro: " + erro.status)
+                                    }
+                                }
+                             );
+                        }
+                    );
+            }
+       );
+    </script>
+</head>
+<body>
+    <div class="container">
+
+        <h3>Projeto Controle de Produtos</h3>
+        <a href="#" data-target="#janela" data-toggle="modal">Cadastra novo Produto</a>
+        <hr />
+
+        <label>Informe no nome do Produto</label>
+        <input type="text" id="nomepesquisa" />
+        <br /><br />
+
+        <p>
+            <span id="resultado"></span>
+        </p>
+        <table id="tabela" class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome do Produto</th>
+                    <th>Preço</th>
+                    <th>Quantidade</th>
+                    <th>Total</th>
+                    <th>Data de Cadastro</th>
+                    <th colspan="2">Operações</th>
+                </tr>
+            </thead>
+
+            <tbody></tbody>
+
+            <tfoot>
+                <tr>
+                    <td colspan="8">Quantidade: <span id="quantidadedepesquisa">0</span></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div id="janela" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success">
+                    <h3 style="text-align: center">Cadastro de Produtos</h3>
+                </div>
+
+                <div class="modal-body">
+
+
+                    <input type="text" id="nome" class="form-control"
+                           placeholder="Nome do Produto" />
+                    <br />
+
+                    <input type="text" id="preco" class="form-control"
+                           placeholder="Preço" />
+                    <br />
+
+                    <input type="text" id="quantidade" class="form-control"
+                           placeholder="Quantidade" />
+                </div>
+
+                <div class="modal-footer">
+                    <input type="button" id="btncadastro" value="Cadastrar Produto"
+                           class="btn btn-success" />
+                    <br /><br />
+                    <span id="mensagem" style="color: red"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--Janela de Edição-->
+    <div id="janelaedicao" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success" >
+                    <h3 style="text-align: center">Atualizar Dados do Produto</h3>
+                </div>
+
+                <div class="modal-body">
+                    <p>
+                        Para alterar os dados do produto, preencha os campos abaixo:
+                    </p>
+
+                    <label>Id do Produto:</label>
+                    <input type="text" id="codigoproduto" class="form-control" readonly="readonly"/>
+                    <br />
+
+                    <label>Nome do Produto:</label>
+                    <input type="text" id="nomeproduto" class="form-control" readonly="readonly"/>
+                    <br />
+
+                    <label>Preço:</label>
+                    <input type="text" id="precoproduto" class="form-control"/>
+                    <br />
+
+                    <label>Quantidade?</label>
+                    <input type="text" id="quantidadeproduto" class="form-control"/>
+
+                </div>
+
+                <div class="modal-footer">
+                    <input type="button" id="btnedicao" class="btn btn-success"
+                           value="Atualizar"/>
+                    <br /><br />
+                    <span id="mensagemedicao"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
